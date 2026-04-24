@@ -37,7 +37,7 @@ export default function MainLayout() {
   const fetchPendingCount = async () => {
     if (!isAdmin) return;
     try {
-      const res = await axios.get('https://localhost:7033/api/ActionRequests', { withCredentials: true });
+      const res = await axios.get('/api/ActionRequests', { withCredentials: true });
       const count = res.data.filter(item => item.Status === 'Pending' || item.status === 'Pending').length;
       setPendingCount(count);
     } catch (error) {

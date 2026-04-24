@@ -39,8 +39,8 @@ export default function Customers() {
     setLoading(true);
     try {
       const url = searchQuery 
-        ? `https://localhost:7033/api/Customers/search?query=${searchQuery}`
-        : 'https://localhost:7033/api/Customers';
+        ? `/api/Customers/search?query=${searchQuery}`
+        : '/api/Customers';
       const response = await axios.get(url, { withCredentials: true });
       
       const realData = response.data.map(item => ({ 
@@ -54,7 +54,7 @@ export default function Customers() {
       setData(realData);
 
       try {
-        const reqResponse = await axios.get('https://localhost:7033/api/ActionRequests', { withCredentials: true });
+        const reqResponse = await axios.get('/api/ActionRequests', { withCredentials: true });
         const pendingIds = reqResponse.data
           .filter(req => (req.Status === 'Pending' || req.status === 'Pending') 
                       && (req.ActionType === 'Delete_Customer' || req.actionType === 'Delete_Customer'))
@@ -76,7 +76,7 @@ export default function Customers() {
     setCurrentCustomer(record);
     try {
       // Tải toàn bộ phiếu (Backend Cúc đã viết Include chi tiết rồi)
-      const res = await axios.get('https://localhost:7033/api/InventoryTickets', { withCredentials: true });
+      const res = await axios.get('/api/InventoryTickets', { withCredentials: true });
       
       // Lọc ra: Chỉ lấy Phiếu Xuất (Bán hàng) VÀ của đúng ông Khách hàng này
       const history = res.data.filter(t => 
@@ -106,10 +106,10 @@ export default function Customers() {
   const handleSave = async (values) => {
     try {
       if (editingId) {
-        await axios.put(`https://localhost:7033/api/Customers/${editingId}`, { id: editingId, ...values });
+        await axios.put(`/api/Customers/${editingId}`, { id: editingId, ...values });
         message.success("Cập nhật thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/Customers', values);
+        await axios.post('/api/Customers', values);
         message.success("Thêm khách hàng thành công!");
       }
       setIsModalVisible(false);
@@ -134,7 +134,7 @@ export default function Customers() {
         content: itemToDelete.name, 
         reason: deleteReason 
       };
-      await axios.post('https://localhost:7033/api/ActionRequests/request-delete', payload, { withCredentials: true });
+      await axios.post('/api/ActionRequests/request-delete', payload, { withCredentials: true });
       message.success("Đã gửi đơn xin xóa cho Admin phê duyệt!");
       setIsDeleteModalVisible(false);
       fetchCustomers(); 

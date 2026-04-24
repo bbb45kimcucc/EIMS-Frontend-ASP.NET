@@ -35,10 +35,10 @@ export default function Products() {
     setLoading(true);
     try {
       const [resProducts, resCategories, resBrands, resUnits] = await Promise.all([
-        axios.get('https://localhost:7033/api/Products'),
-        axios.get('https://localhost:7033/api/Categories'),
-        axios.get('https://localhost:7033/api/Brands'),
-        axios.get('https://localhost:7033/api/Units'),
+        axios.get('/api/Products'),
+        axios.get('/api/Categories'),
+        axios.get('/api/Brands'),
+        axios.get('/api/Units'),
       ]);
 
       const realData = resProducts.data.map(item => ({
@@ -94,7 +94,7 @@ export default function Products() {
 
       // Lưu ý: Cúc nên bỏ hẳn cái headers: { 'Content-Type': 'multipart/form-data' }
       // Để Axios và Trình duyệt tự xử lý cái boundary của file thì sẽ mượt hơn.
-      const res = await axios.post('https://localhost:7033/api/Products/upload-image', formData, {
+      const res = await axios.post('/api/Products/upload-image', formData, {
         withCredentials: true
       });
 
@@ -115,7 +115,7 @@ export default function Products() {
   const exportExcel = async () => {
     try {
       message.loading({ content: 'Đang tạo file Excel...', key: 'export' });
-      const response = await axios.get('https://localhost:7033/api/Products/export-excel', {
+      const response = await axios.get('/api/Products/export-excel', {
         responseType: 'blob',
         withCredentials: true
       });
@@ -155,10 +155,10 @@ export default function Products() {
 
     try {
       if (editingId) {
-        await axios.put(`https://localhost:7033/api/Products/${editingId}`, { id: editingId, ...payload });
+        await axios.put(`/api/Products/${editingId}`, { id: editingId, ...payload });
         message.success("Cập nhật thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/Products', payload);
+        await axios.post('/api/Products', payload);
         message.success("Thêm mới thành công!");
       }
       setIsModalVisible(false);
@@ -170,7 +170,7 @@ export default function Products() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Products/${id}`);
+      await axios.delete(`/api/Products/${id}`);
       message.success("Đã xóa linh kiện!");
       fetchData();
     } catch (error) {

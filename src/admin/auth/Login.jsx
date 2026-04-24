@@ -13,7 +13,7 @@ export default function Login() {
  const onFinish = async (values) => {
     setLoading(true);
     try {
-        const res = await axios.post('https://localhost:7033/api/Users/login', values);
+        const res = await axios.post('/api/Users/login', values);
         
         // 1. Lấy cục dữ liệu user từ Backend trả về
         const userData = res.data.data; 

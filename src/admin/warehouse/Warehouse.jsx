@@ -23,7 +23,7 @@ export default function Warehouses() {
   const fetchWarehouses = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7033/api/Warehouses', { withCredentials: true });
+      const response = await axios.get('/api/Warehouses', { withCredentials: true });
       
       // Fix lỗi PascalCase từ C# trả về
       const realData = response.data.map(item => ({
@@ -61,10 +61,10 @@ export default function Warehouses() {
   const handleSave = async (values) => {
     try {
       if (editingId) {
-        await axios.put(`https://localhost:7033/api/Warehouses/${editingId}`, { id: editingId, ...values });
+        await axios.put(`/api/Warehouses/${editingId}`, { id: editingId, ...values });
         message.success("Cập nhật kho thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/Warehouses', values);
+        await axios.post('/api/Warehouses', values);
         message.success("Thêm kho mới thành công!");
       }
       setIsModalVisible(false);
@@ -76,7 +76,7 @@ export default function Warehouses() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Warehouses/${id}`);
+      await axios.delete(`/api/Warehouses/${id}`);
       message.success("Đã xóa kho!");
       fetchWarehouses();
     } catch (error) {

@@ -17,7 +17,7 @@ export default function Suppliers() {
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7033/api/Suppliers'); // Thay link API của bạn vào
+      const response = await axios.get('/api/Suppliers'); // Thay link API của bạn vào
 
       // Bắt mạch chữ hoa chữ thường ở đây nè:
       const realData = response.data.map(item => ({
@@ -55,10 +55,10 @@ export default function Suppliers() {
   const handleSave = async (values) => {
     try {
       if (editingId) {
-        await axios.put(`https://localhost:7033/api/Suppliers/${editingId}`, { id: editingId, ...values });
+        await axios.put(`/api/Suppliers/${editingId}`, { id: editingId, ...values });
         message.success("Cập nhật thông tin Nhà cung cấp thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/Suppliers', values);
+        await axios.post('/api/Suppliers', values);
         message.success("Thêm Nhà cung cấp mới thành công!");
       }
       setIsModalVisible(false);
@@ -71,7 +71,7 @@ export default function Suppliers() {
   // 4. XÓA AN TOÀN
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Suppliers/${id}`);
+      await axios.delete(`/api/Suppliers/${id}`);
       message.success("Đã xóa Nhà cung cấp!");
       fetchSuppliers();
     } catch (error) {

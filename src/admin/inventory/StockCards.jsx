@@ -25,7 +25,7 @@ export default function StockCards() {
     try {
       // Gửi request kèm theo withCredentials để không bị lỗi 401/403
       const response = await axios.get(
-        `https://localhost:7033/api/StockCards?page=${page}&pageSize=${pageSize}`,
+        `/api/StockCards?page=${page}&pageSize=${pageSize}`,
         { withCredentials: true }
       );
 

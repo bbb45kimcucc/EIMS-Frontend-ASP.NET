@@ -18,7 +18,7 @@ export default function ApprovalCenter() {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('https://localhost:7033/api/ActionRequests');
+      const res = await axios.get('/api/ActionRequests');
       const realData = res.data.map(item => ({
         key: item.Id || item.id,
         id: item.Id || item.id,
@@ -44,7 +44,7 @@ export default function ApprovalCenter() {
   // Xử lý Duyệt / Từ chối
   const handleAction = async (id, action) => {
     try {
-      const url = `https://localhost:7033/api/ActionRequests/${action}/${id}`;
+      const url = `/api/ActionRequests/${action}/${id}`;
       await axios.post(url);
       message.success(action === 'approve' ? "Đã duyệt và thực thi thành công!" : "Đã từ chối yêu cầu!");
       fetchRequests(); // Load lại bảng

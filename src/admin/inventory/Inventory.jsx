@@ -19,7 +19,7 @@ export default function Inventory() {
     setLoading(true);
     try {
       // THÊM withCredentials vào đây
-      const response = await axios.get('https://localhost:7033/api/Products', {
+      const response = await axios.get('/api/Products', {
         withCredentials: true 
       });
 

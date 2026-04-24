@@ -24,8 +24,8 @@ export default function SalesOrder() {
   const fetchData = async () => {
     try {
       const [resProds, resCusts] = await Promise.all([
-        axios.get('https://localhost:7033/api/Products'),
-        axios.get('https://localhost:7033/api/Customers').catch(() => ({ data: [] }))
+        axios.get('/api/Products'),
+        axios.get('/api/Customers').catch(() => ({ data: [] }))
       ]);
       setProducts(resProds.data);
       setCustomers(resCusts.data);
@@ -68,7 +68,7 @@ export default function SalesOrder() {
         ticketDetails: values.ticketDetails
       };
 
-      await axios.post('https://localhost:7033/api/InventoryTickets', payload);
+      await axios.post('/api/InventoryTickets', payload);
       message.success("Bán hàng & Trừ kho thành công!");
 
       const selectedCustomer = customers.find(c => (c.Id || c.id) === values.customerId);

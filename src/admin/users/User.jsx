@@ -31,7 +31,7 @@ export default function Users() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7033/api/Users', axiosConfig);
+      const response = await axios.get('/api/Users', axiosConfig);
       
       // SỬA Ở ĐÂY: Bắt mạch chữ hoa chữ thường của C#
       const realData = response.data.map(item => ({ 
@@ -75,13 +75,13 @@ export default function Users() {
   const handleSave = async (values) => {
     try {
       if (editingId) {
-        await axios.put(`https://localhost:7033/api/Users/${editingId}`, 
+        await axios.put(`/api/Users/${editingId}`, 
           { id: editingId, ...values }, 
           axiosConfig
         );
         message.success("Cập nhật thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/Users', values, axiosConfig);
+        await axios.post('/api/Users', values, axiosConfig);
         message.success("Tạo tài khoản thành công!");
       }
       setIsModalVisible(false);
@@ -95,7 +95,7 @@ export default function Users() {
   // 4. XÓA
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Users/${id}`, axiosConfig);
+      await axios.delete(`/api/Users/${id}`, axiosConfig);
       message.success("Đã xóa nhân viên thành công!");
       fetchUsers();
     } catch (error) {

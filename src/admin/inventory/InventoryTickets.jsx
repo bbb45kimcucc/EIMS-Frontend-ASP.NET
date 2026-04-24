@@ -40,12 +40,12 @@ export default function InventoryTickets() {
     try {
       const config = { withCredentials: true };
       const [resTickets, resProds, resSupps, resCusts, resUsers, resWarehouses] = await Promise.all([
-        axios.get('https://localhost:7033/api/InventoryTickets', config),
-        axios.get('https://localhost:7033/api/Products', config),
-        axios.get('https://localhost:7033/api/Suppliers', config),
-        axios.get('https://localhost:7033/api/Customers', config).catch(() => ({ data: [] })),
-        axios.get('https://localhost:7033/api/Users', config).catch(() => ({ data: [] })),
-        axios.get('https://localhost:7033/api/Warehouses', config).catch(() => ({ data: [] }))
+        axios.get('/api/InventoryTickets', config),
+        axios.get('/api/Products', config),
+        axios.get('/api/Suppliers', config),
+        axios.get('/api/Customers', config).catch(() => ({ data: [] })),
+        axios.get('/api/Users', config).catch(() => ({ data: [] })),
+        axios.get('/api/Warehouses', config).catch(() => ({ data: [] }))
       ]);
 
       const formattedTickets = resTickets.data.map(item => ({
@@ -93,7 +93,7 @@ export default function InventoryTickets() {
     try {
       message.loading({ content: 'Đang trích xuất dữ liệu...', key: 'exportTicket' });
 
-      const response = await axios.get('https://localhost:7033/api/InventoryTickets/export-excel', {
+      const response = await axios.get('/api/InventoryTickets/export-excel', {
         responseType: 'blob',
         withCredentials: true
       });
@@ -143,7 +143,7 @@ export default function InventoryTickets() {
         totalAmount: totalAmt,
       };
 
-      await axios.post('https://localhost:7033/api/InventoryTickets', payload);
+      await axios.post('/api/InventoryTickets', payload);
       message.success("Lập phiếu thành công! Kho đã được cập nhật.");
       setIsModalVisible(false);
       fetchData();
@@ -162,7 +162,7 @@ export default function InventoryTickets() {
     try {
       message.loading({ content: 'Đang nhập dữ liệu...', key: 'importing' });
 
-      await axios.post('https://localhost:7033/api/InventoryTickets/import-excel', formData, {
+      await axios.post('/api/InventoryTickets/import-excel', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
@@ -181,12 +181,12 @@ export default function InventoryTickets() {
     try {
       if (isAdmin) {
         // ADMIN XÓA TRỰC TIẾP
-        await axios.delete(`https://localhost:7033/api/InventoryTickets/${ticketToDelete.id || ticketToDelete.Id}?reason=${encodeURIComponent(deleteReason)}`, {
+        await axios.delete(`/api/InventoryTickets/${ticketToDelete.id || ticketToDelete.Id}?reason=${encodeURIComponent(deleteReason)}`, {
           withCredentials: true
         });
         message.success("Đã hủy phiếu và hoàn lại tồn kho thành công!");
       } else {
-        await axios.post('https://localhost:7033/api/ActionRequests/request-delete', {
+        await axios.post('/api/ActionRequests/request-delete', {
           actionType: 'Delete_InventoryTicket',
           targetId: ticketToDelete?.id || ticketToDelete?.Id || 0,
           reason: deleteReason || "Không có lý do",

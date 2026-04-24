@@ -14,7 +14,7 @@ export default function Brands() {
   const [editingId, setEditingId] = useState(null); 
   const [form] = Form.useForm();
 
-  const API_URL = 'https://localhost:7033/api/Brands';
+  const API_URL = '/api/Brands';
 
   // 1. LẤY DỮ LIỆU THƯƠNG HIỆU
   const fetchBrands = async () => {

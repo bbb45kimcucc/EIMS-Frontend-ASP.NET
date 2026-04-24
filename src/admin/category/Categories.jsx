@@ -18,7 +18,7 @@ export default function Categories() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7033/api/Categories');
+      const response = await axios.get('/api/Categories');
       // SỬA Ở ĐÂY: Thêm trò "bắt mạch" chữ hoa/thường để đảm bảo luôn có key
       const realData = response.data.map(item => ({ 
         ...item, 
@@ -54,11 +54,11 @@ export default function Categories() {
     try {
       if (editingId) {
         // SỬA: Gọi PUT
-        await axios.put(`https://localhost:7033/api/Categories/${editingId}`, { id: editingId, ...values });
+        await axios.put(`/api/Categories/${editingId}`, { id: editingId, ...values });
         message.success("Cập nhật danh mục thành công!");
       } else {
         // THÊM: Gọi POST
-        await axios.post('https://localhost:7033/api/Categories', values);
+        await axios.post('/api/Categories', values);
         message.success("Thêm mới danh mục thành công!");
       }
       setIsModalVisible(false);
@@ -71,7 +71,7 @@ export default function Categories() {
   // 4. XỬ LÝ XÓA (DELETE)
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Categories/${id}`);
+      await axios.delete(`/api/Categories/${id}`);
       message.success("Đã xóa danh mục!");
       fetchCategories();
     } catch (error) {

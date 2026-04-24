@@ -22,7 +22,7 @@ export default function Orders() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://localhost:7033/api/Orders');
+      const response = await axios.get('/api/Orders');
       // Thêm key cho từng dòng để Ant Design không báo lỗi
       const realData = response.data.map(item => ({ ...item, key: item.id }));
       setData(realData);
@@ -53,7 +53,7 @@ export default function Orders() {
   // 2. GỌI API ĐỔI TRẠNG THÁI
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await axios.patch(`https://localhost:7033/api/Orders/${id}/status`, JSON.stringify(newStatus), {
+      await axios.patch(`/api/Orders/${id}/status`, JSON.stringify(newStatus), {
         headers: { 'Content-Type': 'application/json' }
       });
       message.success(`Đã đổi trạng thái đơn hàng thành: ${newStatus}`);
@@ -66,7 +66,7 @@ export default function Orders() {
   // 3. XÓA ĐƠN HÀNG
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://localhost:7033/api/Orders/${id}`);
+      await axios.delete(`/api/Orders/${id}`);
       message.success("Đã xóa đơn hàng!");
       fetchOrders();
     } catch (error) {
