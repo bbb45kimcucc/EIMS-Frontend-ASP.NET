@@ -1,37 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Button, Table, Input, Space, Tag, message } from 'antd';
-import { FilterOutlined, SwapOutlined } from '@ant-design/icons';
+import { Card, Typography, message } from 'antd';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const { Title, Text } = Typography;
+// Import các component con
+import InventoryHeader from './InventoryHeader';
+import InventoryTable from './InventoryTable';
+
+const { Text } = Typography;
 
 export default function Inventory() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Bật cái này để axios luôn gửi kèm Cookie Session
   axios.defaults.withCredentials = true;
 
-  // 1. GỌI API LẤY DỮ LIỆU SẢN PHẨM (TỒN KHO)
   const fetchInventory = async (searchQuery = '') => {
     setLoading(true);
     try {
-      // THÊM withCredentials vào đây
-      const response = await axios.get('/api/Products', {
+      // ĐỔI LINK TỪ /api/Products SANG API SO SÁNH KHO NÀY:
+      const response = await axios.get('/api/Products/inventory-comparison', {
         withCredentials: true 
       });
 
-      // FIX TẬN GỐC: Map lại từ PascalCase (C#) sang camelCase (JS)
-      let realData = response.data.map(item => ({
-        key: item.Id || item.id, // Dùng Id viết hoa nếu có
+      // Lấy data mới theo đúng DTO của API
+      let realData = response.data.map((item, index) => ({
+        key: index, // hoặc item.sku nếu SKU là duy nhất
         sku: item.SKU || item.sku,
-        name: item.Name || item.name,
-        balance: item.CurrentStock || item.currentStock || item.Quantity || item.quantity || 0,
+        name: item.ProductName || item.productName,
+        // Phương án 1
+        storedStock: item.StoredStock || item.storedStock || 0,
+        // Phương án 2
+        calculatedStock: item.CalculatedStock || item.calculatedStock || 0,
       }));
 
-      // Tính năng tìm kiếm nội bộ
+      // Logic Search giữ nguyên
       if (searchQuery) {
         realData = realData.filter(item => 
           (item.sku?.toLowerCase().includes(searchQuery.toLowerCase())) || 
@@ -42,7 +46,7 @@ export default function Inventory() {
       setData(realData);
     } catch (error) {
       console.error(error);
-      message.error("Lỗi khi tải dữ liệu Tồn kho! Kiểm tra quyền đăng nhập nha.");
+      message.error("Lỗi khi tải dữ liệu Tồn kho! Kiểm tra quyền đăng nhập hoặc Backend nha.");
     } finally {
       setLoading(false);
     }
@@ -50,82 +54,23 @@ export default function Inventory() {
 
   useEffect(() => { fetchInventory(); }, []);
 
-  const columns = [
-    { 
-      title: 'Mã SKU', 
-      dataIndex: 'sku', 
-      key: 'sku',
-      render: text => <Tag color="blue">{text}</Tag>
-    },
-    { 
-      title: 'Tên Sản Phẩm', 
-      dataIndex: 'name', 
-      key: 'name', 
-      render: (text) => <strong>{text}</strong> 
-    },
-    { 
-      title: 'Tồn Kho Hiện Tại', 
-      dataIndex: 'balance', 
-      key: 'balance',
-      align: 'center',
-      render: (val) => <strong style={{ fontSize: '16px', color: '#5570F1' }}>{val}</strong>
-    },
-    { 
-      title: 'Trạng Thái', 
-      key: 'status',
-      align: 'center',
-      render: (_, record) => {
-        if (record.balance <= 0) return <Tag color="error">Hết Hàng</Tag>;
-        if (record.balance < 10) return <Tag color="warning">Sắp Hết</Tag>;
-        return <Tag color="success">Còn Hàng</Tag>;
-      }
-    },
-    {
-      title: 'Hành động',
-      key: 'action',
-      align: 'right',
-      render: (_, record) => (
-        <Button 
-          type="link" 
-          icon={<SwapOutlined />} 
-          style={{ color: '#5570F1' }}
-          onClick={() => {
-            message.info(`Đang chuyển tới thẻ kho của ${record.sku}`);
-            navigate('/stockcards');
-          }}
-        >
-          Xem Thẻ Kho
-        </Button>
-      ),
-    },
-  ];
+  const handleNavigate = (sku) => {
+    message.info(`Đang trích xuất thẻ kho của ${sku}...`);
+    navigate(`/stockcards?sku=${sku}`);
+  };
 
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
-        <Text type="secondary">Dashboard / Inventory Management</Text>
+        <Text type="secondary">Dashboard / Kho Nâng Cao (So Sánh)</Text>
       </div>
 
       <Card style={{ borderRadius: '15px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <Title level={4} style={{ margin: 0 }}>Theo Dõi Tồn Kho (Stock Tracking)</Title>
-          <Space>
-            <Input.Search 
-              placeholder="Mã SKU hoặc Tên..." 
-              allowClear
-              onSearch={(value) => fetchInventory(value)}
-              style={{ width: 250 }} 
-            />
-            <Button icon={<FilterOutlined />}>Lọc</Button>
-          </Space>
-        </div>
-        
-        <Table 
-          columns={columns} 
+        <InventoryHeader onSearch={(value) => fetchInventory(value)} />
+        <InventoryTable 
           dataSource={data} 
-          pagination={{ pageSize: 8 }} 
-          loading={loading}
-          bordered={false}
+          loading={loading} 
+          onNavigate={handleNavigate} 
         />
       </Card>
     </>

@@ -4,34 +4,51 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+axios.defaults.withCredentials = true;
+
 const { Title, Text } = Typography;
 
 export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
- const onFinish = async (values) => {
+const onFinish = async (values) => {
     setLoading(true);
     try {
         const res = await axios.post('/api/Users/login', values);
-        
-        // 1. Lấy cục dữ liệu user từ Backend trả về
-        const userData = res.data.data; 
 
-        // 2. Xác định danh xưng dựa trên Role (Admin hoặc Staff)
-        const roleName = (userData.Role === "Admin") ? "Admin" : "Nhân viên";
-        const fullName = userData.FullName || "bạn";
+        const userData = res.data.data;
+        console.log(userData);
 
-        // 3. Hiển thị lời chào cá nhân hóa
-        message.success(`Chào mừng ${roleName} ${fullName} quay trở lại!`);
+        const roleName = (userData.role === "Admin")
+            ? "Quản trị viên"
+            : userData.role === "Sales"
+            ? "Nhân viên bán hàng"
+            : userData.role === "Warehouse"
+            ? "Nhân viên kho"
+            : userData.role === "HR"
+            ? "Nhân viên nhân sự"
+            : "Nhân viên";
 
-        // 4. Lưu vào localStorage và chuyển trang
-        localStorage.setItem('user', JSON.stringify(userData));
-        navigate('/'); 
-        
+        message.success(
+            `Chào mừng ${roleName} ${userData.fullName} quay trở lại!`
+        );
+
+        // Lưu thông tin đăng nhập
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        // Lưu riêng Role
+        localStorage.setItem("role", userData.role);
+
+        // Lưu Id
+        localStorage.setItem("userId", userData.id);
+
+        navigate("/");
+
     } catch (error) {
-        // Nếu sai mật khẩu hoặc tài khoản, Backend sẽ trả về câu "Sai tài khoản hoặc mật khẩu rồi Cúc ơi!"
-        message.error(error.response?.data?.message || "Đăng nhập thất bại!");
+        message.error(
+            error.response?.data?.message || "Đăng nhập thất bại!"
+        );
     } finally {
         setLoading(false);
     }

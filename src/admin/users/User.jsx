@@ -1,53 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Button, Table, Input, Space, Tag, message, Modal, Form, Popconfirm, Select } from 'antd';
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, MailOutlined } from '@ant-design/icons';
+import { Card, Typography, Button, Input, Space, message } from 'antd';
+import { SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
+// Import 2 file con mình vừa tạo
+import UserTable from './UserTable';
+import UserModal from './UserModal';
+
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 export default function Users() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form] = Form.useForm();
+  const [editingData, setEditingData] = useState(null); // Dữ liệu cũ truyền vào form
 
-  // Lấy thông tin user từ LocalStorage
   const storedUser = localStorage.getItem('user');
-  const currentUser = (storedUser && storedUser !== "undefined" && storedUser !== "null") 
-    ? JSON.parse(storedUser) 
-    : {};  
+  const currentUser = (storedUser && storedUser !== "undefined" && storedUser !== "null")
+    ? JSON.parse(storedUser)
+    : {};
 
-  // CẤU HÌNH QUAN TRỌNG: Gửi kèm Cookie/Session và Custom Header
-  const axiosConfig = { 
-    withCredentials: true, // Bắt buộc phải có dòng này để C# đọc được Session
-    headers: { 
-      'User-Role': currentUser.Role || currentUser.role || '' 
-    } 
+  const axiosConfig = {
+    withCredentials: true,
+    headers: {
+      'User-Role': currentUser.Role || currentUser.role || ''
+    }
   };
 
-  // 1. LẤY DỮ LIỆU TỪ C#
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/Users', axiosConfig);
-      
-      // SỬA Ở ĐÂY: Bắt mạch chữ hoa chữ thường của C#
-      const realData = response.data.map(item => ({ 
-        ...item, 
+
+      const realData = response.data.map(item => ({
+        ...item,
         key: item.Id || item.id,
         id: item.Id || item.id,
         username: item.Username || item.username,
         fullName: item.FullName || item.fullName,
         email: item.Email || item.email,
-        role: item.Role || item.role
+        role: item.Role || item.role,
+        phone: item.Phone || item.phone,
+        department:
+          item.Department || item.department,
+        isActive:
+          item.IsActive ?? item.isActive
       }));
-      
       setData(realData);
     } catch (error) {
       if (error.response?.status === 401) {
-        message.error("Lỗi 401: Bạn không đủ quyền hạn (Không phải Admin)!");
+        message.error("Lỗi 401: Bạn không đủ quyền hạn!");
       } else {
         message.error("Không thể tải dữ liệu nhân viên");
       }
@@ -58,25 +61,24 @@ export default function Users() {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  // 2. MỞ BẢNG THÊM / SỬA
+  // Mở modal (Xử lý cho cả chức năng Thêm mới và Sửa)
   const showModal = (record = null) => {
     if (record) {
       setEditingId(record.id);
-      form.setFieldsValue(record);
+      setEditingData(record);
     } else {
       setEditingId(null);
-      form.resetFields();
-      form.setFieldsValue({ role: 'Staff' });
+      setEditingData(null);
     }
     setIsModalVisible(true);
   };
 
-  // 3. LƯU (POST / PUT)
-  const handleSave = async (values) => {
+  // Hành động Lưu từ Modal gửi lên
+  const handleSave = async (values, currentEditingId) => {
     try {
-      if (editingId) {
-        await axios.put(`/api/Users/${editingId}`, 
-          { id: editingId, ...values }, 
+      if (currentEditingId) {
+        await axios.put(`/api/Users/${currentEditingId}`,
+          { id: currentEditingId, ...values },
           axiosConfig
         );
         message.success("Cập nhật thành công!");
@@ -92,7 +94,7 @@ export default function Users() {
     }
   };
 
-  // 4. XÓA
+  // Hành động Xóa từ Bảng gửi lên
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/Users/${id}`, axiosConfig);
@@ -102,47 +104,6 @@ export default function Users() {
       message.error(error.response?.data?.message || "Lỗi không thể xóa!");
     }
   };
-
-  const columns = [
-    {
-      title: 'Tài khoản',
-      dataIndex: 'username',
-      width: '15%',
-      render: text => <strong><UserOutlined style={{ marginRight: 5, color: '#8c8c8c' }} />{text}</strong>
-    },
-    { title: 'Họ và Tên', dataIndex: 'fullName', width: '25%' },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      width: '25%',
-      render: text => <><MailOutlined style={{ marginRight: 5, color: '#8c8c8c' }} />{text}</>
-    },
-    {
-      title: 'Phân quyền',
-      dataIndex: 'role',
-      width: '15%',
-      render: (role) => (
-        <Tag color={role === 'Admin' ? 'volcano' : 'blue'} style={{ borderRadius: '4px', fontWeight: 'bold' }}>
-          {role?.toUpperCase()}
-        </Tag>
-      )
-    },
-    {
-      title: 'Hành động',
-      width: '20%',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined />} style={{ color: '#5570F1' }} onClick={() => showModal(record)} />
-          {/* Không cho Admin tự xóa chính mình để bảo vệ hệ thống */}
-          {record.role !== 'Admin' && (
-            <Popconfirm title="Xóa nhân viên này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
-              <Button type="text" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          )}
-        </Space>
-      ),
-    },
-  ];
 
   return (
     <>
@@ -161,44 +122,24 @@ export default function Users() {
           </Space>
         </div>
 
-        <Table columns={columns} dataSource={data} pagination={{ pageSize: 8 }} loading={loading} />
+        {/* Nạp Bảng hiển thị */}
+        <UserTable
+          data={data}
+          loading={loading}
+          onEdit={showModal}
+          onDelete={handleDelete}
+        />
       </Card>
 
-      <Modal
-        title={editingId ? "Cập Nhật Thông Tin" : "Tạo Tài Khoản Mới"}
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        onOk={() => form.submit()}
-        okText="Lưu" cancelText="Hủy"
-        width={600}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Space size="large" style={{ display: 'flex', width: '100%' }}>
-            <Form.Item name="username" label="Tài khoản đăng nhập" rules={[{ required: true, message: 'Nhập username!' }]} style={{ flex: 1 }}>
-              <Input placeholder="VD: admin_cuc" />
-            </Form.Item>
-            <Form.Item name="password" label="Mật khẩu" rules={[{ required: !editingId, message: 'Nhập mật khẩu!' }]} style={{ flex: 1 }}>
-              <Input.Password autoComplete="new-password" placeholder="Nhập mật khẩu" />
-            </Form.Item>
-          </Space>
-
-          <Form.Item name="fullName" label="Họ và Tên đầy đủ" rules={[{ required: true, message: 'Nhập họ tên!' }]}>
-            <Input placeholder="VD: Trương Thị Kim Cúc" />
-          </Form.Item>
-
-          <Space size="large" style={{ display: 'flex', width: '100%' }}>
-            <Form.Item name="email" label="Địa chỉ Email" rules={[{ required: true, type: 'email', message: 'Email không hợp lệ!' }]} style={{ flex: 2 }}>
-              <Input placeholder="VD: cuc@metrix.com" />
-            </Form.Item>
-            <Form.Item name="role" label="Phân quyền (Role)" style={{ flex: 1 }}>
-              <Select disabled={editingId && data.find(u => u.id === editingId)?.role === 'Admin'}>
-                <Option value="Admin">Admin</Option>
-                <Option value="Staff">Staff</Option>
-              </Select>
-            </Form.Item>
-          </Space>
-        </Form>
-      </Modal>
+      {/* Nạp Khung nhập liệu */}
+      <UserModal
+        isModalVisible={isModalVisible}
+        setIsModalVisible={setIsModalVisible}
+        editingId={editingId}
+        initialData={editingData}
+        onSave={handleSave}
+        dataList={data}
+      />
     </>
   );
 }
