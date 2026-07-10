@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
-// THÊM: Row và Col vào danh sách import từ 'antd'
-import {
-  Card, Typography, Button, Table, Input, Space, Tag, message,
-  Modal, Form, Popconfirm, Select, InputNumber, Upload, Image,
-  Row, Col
-} from 'antd';
-import {
-  PlusOutlined, EditOutlined, DeleteOutlined, DownloadOutlined
-} from '@ant-design/icons';
+import { Card, Typography, message, Form } from 'antd';
 import axios from 'axios';
-// THÊM: import thư viện moment
 import moment from 'moment';
 
-const { Title, Text } = Typography;
-const { Option } = Select;
+// Import các component con đã tách
+import ProductHeader from './ProductHeader';
+import ProductTable from './ProductTable';
+import ProductModal from './ProductModal';
+
+const { Text } = Typography;
 
 export default function Products() {
   const [data, setData] = useState([]);
@@ -21,11 +16,13 @@ export default function Products() {
   const [brands, setBrands] = useState([]);
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // DÙNG 1 BIẾN DUY NHẤT ĐỂ QUẢN LÝ ẢNH
   const [imageUrl, setImageUrl] = useState("");
-
+  
+  // State tìm kiếm và lọc
   const [searchText, setSearchText] = useState('');
+  const [filterCategory, setFilterCategory] = useState(null);
+  const [filterBrand, setFilterBrand] = useState(null);
+  
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form] = Form.useForm();
@@ -47,7 +44,8 @@ export default function Products() {
         id: item.Id || item.id,
         sku: item.SKU || item.sku,
         name: item.Name || item.name,
-        quantity: item.Quantity ?? item.quantity ?? item.CurrentStock ?? item.currentStock ?? 0, averagePrice: item.AveragePrice || item.averagePrice,
+        quantity: item.Quantity ?? item.quantity ?? item.CurrentStock ?? item.currentStock ?? 0, 
+        averagePrice: item.AveragePrice || item.averagePrice,
         categoryName: item.Category?.Name || item.category?.name || 'Chưa phân loại',
         brandName: item.Brand?.Name || item.brand?.name || '---',
         unitName: item.Unit?.Name || item.unit?.name || '---',
@@ -72,38 +70,39 @@ export default function Products() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // 2. LOGIC TÌM KIẾM
+  // 2. LOGIC TÌM KIẾM & LỌC NÂNG CAO (Đã sửa)
   const filteredData = data.filter((item) => {
     const lowerCaseSearch = searchText.toLowerCase();
-    return (
+    
+    // Điều kiện 1: Tìm theo chữ (SKU, Tên, Danh mục)
+    const matchSearch = 
       (item.name && item.name.toLowerCase().includes(lowerCaseSearch)) ||
       (item.sku && item.sku.toLowerCase().includes(lowerCaseSearch)) ||
-      (item.categoryName && item.categoryName.toLowerCase().includes(lowerCaseSearch))
-    );
+      (item.categoryName && item.categoryName.toLowerCase().includes(lowerCaseSearch));
+
+    // Điều kiện 2: Lọc theo Danh mục (nếu có chọn)
+    const matchCategory = filterCategory ? item.categoryName === filterCategory : true;
+    
+    // Điều kiện 3: Lọc theo Thương hiệu (nếu có chọn)
+    const matchBrand = filterBrand ? item.brandName === filterBrand : true;
+
+    // Phải thỏa mãn cả 3 điều kiện thì mới hiển thị
+    return matchSearch && matchCategory && matchBrand;
   });
 
-  // 3. XỬ LÝ UPLOAD ẢNH LÊN CLOUDINARY QUA BACKEND
+  // 3. XỬ LÝ UPLOAD ẢNH
   const handleUploadImage = async (info) => {
     const formData = new FormData();
-
-    // SỬA CHỖ NÀY: Thay info.file.originFileObj thành info.file
     formData.append('file', info.file);
 
     try {
       message.loading({ content: 'Đang tải ảnh lên mây...', key: 'upImg' });
-
-      // Lưu ý: Cúc nên bỏ hẳn cái headers: { 'Content-Type': 'multipart/form-data' }
-      // Để Axios và Trình duyệt tự xử lý cái boundary của file thì sẽ mượt hơn.
       const res = await axios.post('/api/Products/upload-image', formData, {
         withCredentials: true
       });
-
       setImageUrl(res.data.url);
       message.success({ content: 'Ảnh đã lên mây thành công!', key: 'upImg' });
-
-      // Gọi onSuccess để Ant Design biết là đã tải xong
       if (info.onSuccess) info.onSuccess(res.data);
-
     } catch (error) {
       console.error("Lỗi chi tiết:", error.response?.data);
       message.error({ content: 'Lỗi upload ảnh!', key: 'upImg' });
@@ -137,22 +136,18 @@ export default function Products() {
     if (record) {
       setEditingId(record.id);
       form.setFieldsValue(record);
-      setImageUrl(record.avatar); // Hiện lại ảnh cũ khi Sửa
+      setImageUrl(record.avatar);
     } else {
       setEditingId(null);
       form.resetFields();
-      setImageUrl(""); // Xóa trắng ảnh khi Thêm mới
+      setImageUrl("");
     }
     setIsModalVisible(true);
   };
 
-  // 6. LƯU DỮ LIỆU (ADD / EDIT)
+  // 6. LƯU DỮ LIỆU
   const handleSave = async (values) => {
-    const payload = {
-      ...values,
-      image: imageUrl // Gửi link ảnh đã upload thành công
-    };
-
+    const payload = { ...values, image: imageUrl };
     try {
       if (editingId) {
         await axios.put(`/api/Products/${editingId}`, { id: editingId, ...payload });
@@ -168,6 +163,7 @@ export default function Products() {
     }
   };
 
+  // 7. XÓA DỮ LIỆU
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/Products/${id}`);
@@ -178,42 +174,6 @@ export default function Products() {
     }
   };
 
-  const columns = [
-    {
-      title: 'Hình ảnh',
-      dataIndex: 'avatar',
-      width: '10%',
-      render: (img) => img ? <Image width={50} height={50} src={img} style={{ borderRadius: '8px', objectFit: 'cover' }} /> : <Tag>No Image</Tag>
-    },
-    { title: 'SKU', dataIndex: 'sku', width: '10%' },
-    { title: 'Tên Linh Kiện', dataIndex: 'name', width: '25%', render: text => <strong>{text}</strong> },
-    { title: 'Danh mục', dataIndex: 'categoryName', width: '15%' },
-    {
-      title: 'Giá bán',
-      dataIndex: 'averagePrice',
-      width: '12%',
-      render: (price) => <Text type="danger">{(price || 0).toLocaleString()} đ</Text>
-    },
-    {
-      title: 'Tồn kho',
-      dataIndex: 'quantity',
-      width: '10%',
-      render: (qty) => <Tag color={qty > 5 ? 'success' : 'error'}>{qty}</Tag>
-    },
-    {
-      title: 'Hành động',
-      width: '12%',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined />} style={{ color: '#5570F1' }} onClick={() => showModal(record)} />
-          <Popconfirm title="Xóa linh kiện này?" onConfirm={() => handleDelete(record.id)}>
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <>
       <div style={{ marginBottom: '20px' }}>
@@ -221,114 +181,38 @@ export default function Products() {
       </div>
 
       <Card style={{ borderRadius: '15px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <Title level={4} style={{ margin: 0 }}>Kho Linh Kiện</Title>
-          <Space>
-            <Input.Search
-              placeholder="Tìm theo mã SKU, tên..."
-              allowClear
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 250 }}
-            />
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={exportExcel}
-              style={{ borderColor: '#237804', color: '#237804' }}
-            >
-              Xuất Excel
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => showModal()} style={{ background: '#5570F1' }}>
-              Thêm Linh Kiện
-            </Button>
-          </Space>
-        </div>
-
-        <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 8 }} loading={loading} />
+        {/* Đã cập nhật truyền props xuống ProductHeader */}
+        <ProductHeader 
+          onSearch={setSearchText} 
+          onExport={exportExcel} 
+          onAdd={() => showModal()} 
+          categories={categories}
+          brands={brands}
+          onFilterCategory={setFilterCategory}
+          onFilterBrand={setFilterBrand}
+        />
+        
+        <ProductTable 
+          dataSource={filteredData} 
+          loading={loading} 
+          onEdit={showModal} 
+          onDelete={handleDelete} 
+        />
       </Card>
 
-      <Modal
-        title={editingId ? "Cập Nhật Linh Kiện" : "Thêm Linh Kiện Mới"}
-        open={isModalVisible}
+      <ProductModal 
+        visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        onOk={() => form.submit()}
-        okText="Lưu lại" cancelText="Hủy"
-        width={750}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item label="Ảnh minh họa">
-            <Upload
-              listType="picture-card"
-              showUploadList={false}
-              customRequest={handleUploadImage}
-            >
-              {imageUrl ? (
-                <img src={imageUrl} alt="Linh kiện" style={{ width: '100%', borderRadius: '8px' }} />
-              ) : (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
-                </div>
-              )}
-            </Upload>
-            {imageUrl && <Button type="link" onClick={() => setImageUrl("")} danger>Xóa ảnh</Button>}
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="sku" label="Mã SKU" rules={[{ required: true, message: 'Không được bỏ trống!' }]}>
-                <Input placeholder="VD: MCU-001" />
-              </Form.Item>
-            </Col>
-            <Col span={16}>
-              <Form.Item name="name" label="Tên linh kiện" rules={[{ required: true, message: 'Không được bỏ trống!' }]}>
-                <Input placeholder="VD: Arduino Uno R3" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="categoryId" label="Danh mục">
-                <Select placeholder="Chọn danh mục">
-                  {categories.map(c => <Option key={c.id || c.Id} value={c.id || c.Id}>{c.name || c.Name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="brandId" label="Thương hiệu">
-                <Select placeholder="Chọn hãng">
-                  {brands.map(b => <Option key={b.id || b.Id} value={b.id || b.Id}>{b.name || b.Name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="unitId" label="Đơn vị tính">
-                <Select placeholder="Chọn ĐVT">
-                  {units.map(u => <Option key={u.id || u.Id} value={u.id || u.Id}>{u.name || u.Name}</Option>)}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="averagePrice" label="Giá bán ước tính (VNĐ)">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Tồn kho hiện tại" tooltip="Số lượng này sẽ tự động thay đổi khi bạn nhập/xuất kho">
-                <InputNumber value={form.getFieldValue('quantity')} disabled style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
+        onSave={handleSave}
+        form={form}
+        editingId={editingId}
+        imageUrl={imageUrl}
+        setImageUrl={setImageUrl}
+        handleUploadImage={handleUploadImage}
+        categories={categories}
+        brands={brands}
+        units={units}
+      />
     </>
   );
 }

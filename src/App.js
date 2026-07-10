@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'; 
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import MainLayout from './admin/layout/MainLayout';
 import Dashboard from './admin/dashboard/Dashboard';
@@ -11,32 +11,36 @@ import Customers from './admin/customer/Customers';
 import Users from './admin/users/User';
 import Suppliers from './admin/suppliers/Suppliers';
 import Warehouses from './admin/warehouse/Warehouse';
-import InventoryTickets from './admin/inventory/InventoryTickets'; 
+import InventoryTickets from './admin/inventory/InventoryTickets';
 import StockCards from './admin/inventory/StockCards';
 import Login from './admin/auth/Login';
 import Brands from './admin/brand/Brands';
 import ApprovalCenter from './admin/approvals/ApprovalCenter';
 import SalesOrder from './admin/customer/SalesOrder';
+import LeaveManagement from './admin/users/LeaveManagement';
+import GlobalSearchPage from './admin/search/GlobalSearchPage';
+import WorkSchedules from './admin/users/WorkSchedules';
+import PayrollTable from './admin/users/PayrollTable';
 
 // 1. NÂNG CẤP COMPONENT BẢO VỆ ROUTE
 const ProtectedRoute = ({ children, allowedRoles }) => {
-    const userStr = localStorage.getItem('user');
-    
-    // Bước 1: Kiểm tra xem đã đăng nhập chưa
-    if (!userStr) {
-        return <Navigate to="/login" replace />;
-    }
-    
-    const user = JSON.parse(userStr);
-    const userRole = user?.Role || user?.role; // Chấp nhận cả Role (C#) hoặc role (JS)
+  const userStr = localStorage.getItem('user');
 
-    // Bước 2: Kiểm tra quyền truy cập (nếu trang đó có yêu cầu quyền cụ thể)
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-        // Nếu không đủ quyền, đá về trang chủ Dashboard
-        return <Navigate to="/" replace />;
-    }
-    
-    return children;
+  // Bước 1: Kiểm tra xem đã đăng nhập chưa
+  if (!userStr) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const user = JSON.parse(userStr);
+  const userRole = user?.Role || user?.role; // Chấp nhận cả Role (C#) hoặc role (JS)
+
+  // Bước 2: Kiểm tra quyền truy cập (nếu trang đó có yêu cầu quyền cụ thể)
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    // Nếu không đủ quyền, đá về trang chủ Dashboard
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -47,8 +51,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Layout chính được bảo vệ: Phải login mới thấy được thanh Menu */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <MainLayout />
@@ -61,39 +65,48 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="customers" element={<Customers />} />
-                    <Route path="salesorders" element={<SalesOrder />} />
-
-          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="salesorders" element={<SalesOrder />} />
+          <Route path="work-schedules" element={<WorkSchedules />} />
           <Route path="tickets" element={<InventoryTickets />} />
+            <Route path="payrolltable" element={<PayrollTable />} />
+
           <Route path="stockcards" element={<StockCards />} />
           <Route path="brands" element={<Brands />} />
-
+          <Route path="search" element={<GlobalSearchPage />} />
+<Route
+            path="suppliers"
+            element={
+              <ProtectedRoute allowedRoles={['Admin', 'Warehouse']}>
+                <Suppliers />
+              </ProtectedRoute>
+            }
+          />
           {/* --- CÁC TRANG CHỈ ADMIN MỚI ĐƯỢC VÀO --- */}
-          <Route 
-            path="users" 
+          <Route
+            path="users"
             element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <Users />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="warehouses" 
+          <Route
+            path="warehouses"
             element={
-              <ProtectedRoute allowedRoles={['Admin']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Warehouse']}>
                 <Warehouses />
               </ProtectedRoute>
-            } 
+            }
           />
-          
+
           {/* ĐÂY NÈ: TÁCH RIÊNG TRANG PHÊ DUYỆT RA THÀNH 1 ROUTE MỚI */}
-          <Route 
-            path="approvals" 
+          <Route
+            path="approvals"
             element={
-              <ProtectedRoute allowedRoles={['Admin']}>
+              <ProtectedRoute allowedRoles={['Admin',]}>
                 <ApprovalCenter />
               </ProtectedRoute>
-            } 
+            }
           />
 
         </Route>
